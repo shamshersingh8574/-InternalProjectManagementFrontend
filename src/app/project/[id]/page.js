@@ -30,6 +30,9 @@ export default function ProjectRoom() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [modalStatus, setModalStatus] = useState('todo');
+  const [unassignAlert, setUnassignAlert] = useState(null);
+
+  const isOwner = user && project && project.owner && (project.owner._id === user._id || project.owner === user._id);
 
   useEffect(() => {
     if (!token) {
@@ -66,12 +69,30 @@ export default function ProjectRoom() {
       setTasks((prev) => prev.filter((task) => task._id !== deletedTaskId));
     });
 
+    // Listen for project structure updates (e.g. member added)
+    socket.on('project_updated', (updatedProject) => {
+      setProject(updatedProject);
+    });
+
+    socket.on('project_deleted', (deletedProjectId) => {
+      if (deletedProjectId === projectId) {
+        router.push('/');
+      }
+    });
+
+    socket.on('task_unassigned_notification', (data) => {
+      setUnassignAlert(data);
+    });
+
     // Clean up connections on component unmount
     return () => {
       leaveProject(projectId);
       socket.off('task_created');
       socket.off('task_updated');
       socket.off('task_deleted');
+      socket.off('project_updated');
+      socket.off('project_deleted');
+      socket.off('task_unassigned_notification');
     };
   }, [socket, connected, projectId]);
 
@@ -180,6 +201,7 @@ export default function ProjectRoom() {
             status: taskData.status,
             priority: taskData.priority,
             assignees: taskData.assignees,
+            unassignReasons: taskData.unassignReasons,
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -316,7 +338,7 @@ export default function ProjectRoom() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <h2>{project.name}</h2>
-                {user && project.owner && (project.owner._id === user._id || project.owner === user._id) && (
+                {isOwner && (
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button 
                       onClick={() => setIsEditingProject(true)} 
@@ -339,7 +361,7 @@ export default function ProjectRoom() {
         </div>
 
         <div className="board-actions">
-          {user && project.owner && project.owner._id === user._id && (
+          {isOwner && (
             <form onSubmit={handleInviteMember} className="invite-member-form">
               <input
                 type="email"
@@ -354,16 +376,18 @@ export default function ProjectRoom() {
             </form>
           )}
           
-          <button
-            className="btn-primary"
-            onClick={() => {
-              setEditingTask(null);
-              setModalStatus('todo');
-              setModalOpen(true);
-            }}
-          >
-            + Add Task
-          </button>
+          {isOwner && (
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setEditingTask(null);
+                setModalStatus('todo');
+                setModalOpen(true);
+              }}
+            >
+              + Add Task
+            </button>
+          )}
         </div>
       </div>
 
@@ -380,17 +404,20 @@ export default function ProjectRoom() {
       )}
 
       <KanbanBoard
-        tasks={tasks}
+        tasks={isOwner ? tasks : tasks.filter(t => t.assignees && t.assignees.some(u => (u._id || u) === user?._id))}
         onTaskMove={handleTaskMove}
         onTaskEdit={(task) => {
           setEditingTask(task);
           setModalOpen(true);
         }}
         onAddTask={(status) => {
+          if (!isOwner) return;
           setEditingTask(null);
           setModalStatus(status);
           setModalOpen(true);
         }}
+        isOwner={isOwner}
+        currentUser={user}
       />
 
       <TaskModal
@@ -403,7 +430,42 @@ export default function ProjectRoom() {
         onSave={handleTaskSave}
         onDelete={handleTaskDelete}
         projectMembers={project.members || []}
+        isOwner={isOwner}
+        currentUser={user}
       />
+
+      {unassignAlert && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          background: 'rgba(30, 41, 59, 0.95)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(239, 68, 68, 0.4)',
+          borderRadius: '12px',
+          padding: '1.25rem',
+          color: '#f8fafc',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+          maxWidth: '350px',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem' }}>
+            <span style={{ fontWeight: 'bold', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              ⚠️ Task Unassigned
+            </span>
+            <button onClick={() => setUnassignAlert(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem', padding: '0 0.2rem' }}>&times;</button>
+          </div>
+          <p style={{ fontSize: '0.9rem', margin: 0, color: '#e2e8f0' }}>
+            You were unassigned from task <strong>{unassignAlert.taskTitle}</strong> in project <strong>{unassignAlert.projectName}</strong>.
+          </p>
+          <div style={{ fontSize: '0.85rem', color: '#f1f5f9', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '6px', borderLeft: '3px solid #ef4444', wordBreak: 'break-word' }}>
+            <strong>Reason:</strong> {unassignAlert.reason}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

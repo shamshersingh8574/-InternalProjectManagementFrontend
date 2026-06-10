@@ -3,7 +3,7 @@
 import React from 'react';
 import TaskCard from './TaskCard';
 
-export default function KanbanBoard({ tasks = [], onTaskMove, onTaskEdit, onAddTask }) {
+export default function KanbanBoard({ tasks = [], onTaskMove, onTaskEdit, onAddTask, isOwner, currentUser }) {
   const columns = [
     { id: 'todo', title: 'To Do', emoji: '📋' },
     { id: 'in-progress', title: 'In Progress', emoji: '⚡' },
@@ -43,13 +43,15 @@ export default function KanbanBoard({ tasks = [], onTaskMove, onTaskEdit, onAddT
                 <h3>{column.title}</h3>
                 <span className="column-task-count">{columnTasks.length}</span>
               </div>
-              <button
-                className="add-task-header-btn"
-                onClick={() => onAddTask(column.id)}
-                title={`Add task to ${column.title}`}
-              >
-                +
-              </button>
+              {isOwner && (
+                <button
+                  className="add-task-header-btn"
+                  onClick={() => onAddTask(column.id)}
+                  title={`Add task to ${column.title}`}
+                >
+                  +
+                </button>
+              )}
             </div>
 
             <div className="kanban-cards-list">
@@ -59,6 +61,8 @@ export default function KanbanBoard({ tasks = [], onTaskMove, onTaskEdit, onAddT
                     key={task._id}
                     task={task}
                     onEdit={onTaskEdit}
+                    isOwner={isOwner}
+                    currentUser={currentUser}
                   />
                 ))
               ) : (

@@ -1,13 +1,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 
-export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, projectMembers = [] }) {
+export default function TaskModal({ 
+  task, 
+  isOpen, 
+  onClose, 
+  onSave, 
+  onDelete, 
+  projectMembers = [], 
+  isOwner = false, 
+  currentUser = null 
+}) {
+  const { token, API_URL } = useAuth();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('todo');
   const [priority, setPriority] = useState('medium');
   const [assignees, setAssignees] = useState([]);
+
+  // Comment State
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentError, setCommentError] = useState('');
 
   useEffect(() => {
     if (task) {
@@ -23,13 +41,37 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
       setPriority('medium');
       setAssignees([]);
     }
+    setCommentError('');
+    setCommentText('');
   }, [task, isOpen]);
 
   if (!isOpen) return null;
 
+  const isAssigned = task && task.assignees && task.assignees.some((u) => {
+    const assigneeId = u._id || u;
+    return assigneeId === currentUser?._id;
+  });
+
+  const canEditFields = isOwner;
+  const canEditStatus = isOwner || isAssigned;
+  const canDelete = isOwner;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
+
+    const originalAssigneeIds = task && task.assignees ? task.assignees.map(u => u._id || u) : [];
+    const removedAssignees = originalAssigneeIds.filter(id => !assignees.includes(id));
+    const unassignReasons = {};
+
+    if (removedAssignees.length > 0) {
+      for (const userId of removedAssignees) {
+        const userObj = task.assignees.find(u => (u._id || u) === userId);
+        const userName = userObj && userObj.username ? userObj.username : 'User';
+        const reason = prompt(`Provide a reason for unassigning ${userName} from this task:`, "Task reassignment / cleanup");
+        unassignReasons[userId] = reason || "No reason provided.";
+      }
+    }
 
     onSave({
       _id: task?._id,
@@ -38,7 +80,29 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
       status,
       priority,
       assignees,
+      unassignReasons,
     });
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+
+    setIsSubmittingComment(true);
+    setCommentError('');
+    try {
+      await axios.post(
+        `${API_URL}/tasks/${task._id}/comments`,
+        { text: commentText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCommentText('');
+    } catch (err) {
+      console.error('Failed to post comment:', err);
+      setCommentError(err.response?.data?.message || 'Failed to post comment.');
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   const toggleAssignee = (userId) => {
@@ -49,11 +113,13 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
     }
   };
 
+  const comments = task?.comments || [];
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>{task ? 'Edit Task' : 'Add New Task'}</h3>
+          <h3>{task ? 'Task Details' : 'Add New Task'}</h3>
           <button onClick={onClose} className="modal-close-btn">&times;</button>
         </div>
 
@@ -67,6 +133,7 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
               onChange={(e) => setTitle(e.target.value)}
               placeholder="E.g., Complete backend integration"
               required
+              disabled={!canEditFields}
             />
           </div>
 
@@ -78,6 +145,7 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what needs to be done..."
+              disabled={!canEditFields}
             />
           </div>
 
@@ -88,6 +156,7 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
                 id="modal-status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
+                disabled={!canEditStatus}
               >
                 <option value="todo">To Do</option>
                 <option value="in-progress">In Progress</option>
@@ -101,6 +170,7 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
                 id="modal-priority"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
+                disabled={!canEditFields}
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -114,11 +184,12 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
             <div className="member-checkbox-list">
               {projectMembers.length > 0 ? (
                 projectMembers.map((member) => (
-                  <label key={member._id} className="member-checkbox-label">
+                  <label key={member._id} className="member-checkbox-label" style={{ opacity: !canEditFields ? 0.75 : 1 }}>
                     <input
                       type="checkbox"
                       checked={assignees.includes(member._id)}
                       onChange={() => toggleAssignee(member._id)}
+                      disabled={!canEditFields}
                     />
                     <span>{member.username}</span>
                   </label>
@@ -130,7 +201,7 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
           </div>
 
           <div className="modal-footer">
-            {task && (
+            {task && canDelete && (
               <button
                 type="button"
                 className="btn-danger"
@@ -145,14 +216,68 @@ export default function TaskModal({ task, isOpen, onClose, onSave, onDelete, pro
             )}
             <div className="modal-actions-right">
               <button type="button" className="btn-secondary" onClick={onClose}>
-                Cancel
+                {canEditFields || canEditStatus ? 'Cancel' : 'Close'}
               </button>
-              <button type="submit" className="btn-primary">
-                Save Changes
-              </button>
+              {(canEditFields || canEditStatus) && (
+                <button type="submit" className="btn-primary">
+                  Save Changes
+                </button>
+              )}
             </div>
           </div>
         </form>
+
+        {task && (
+          <div className="comments-section">
+            <h4 className="comments-title">Comments ({comments.length})</h4>
+            
+            {commentError && (
+              <div style={{ color: '#fca5a5', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                {commentError}
+              </div>
+            )}
+            
+            <div className="comments-list">
+              {comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment._id || comment.id || Math.random()} className="comment-item">
+                    <div className="comment-header">
+                      <span className="comment-user">
+                        {comment.user?.username || 'Unknown User'}
+                      </span>
+                      <span className="comment-date">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="comment-text">{comment.text}</p>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic', margin: '0.5rem 0' }}>
+                  No comments yet. Be the first to comment!
+                </p>
+              )}
+            </div>
+            
+            <form onSubmit={handleCommentSubmit} className="comment-form">
+              <input
+                type="text"
+                className="comment-input"
+                placeholder="Write a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                required
+              />
+              <button 
+                type="submit" 
+                className="comment-submit-btn"
+                disabled={isSubmittingComment}
+              >
+                {isSubmittingComment ? 'Posting...' : 'Comment'}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

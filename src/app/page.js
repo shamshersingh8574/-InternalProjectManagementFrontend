@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import Navbar from '../components/Navbar';
 import AuthForm from '../components/AuthForm';
 import Link from 'next/link';
@@ -9,6 +10,7 @@ import axios from 'axios';
 
 export default function Home() {
   const { user, token, loading, API_URL } = useAuth();
+  const { socket, connected } = useSocket();
   const [projects, setProjects] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [projectName, setProjectName] = useState('');
@@ -16,6 +18,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [dashboardError, setDashboardError] = useState('');
   const [fetchingProjects, setFetchingProjects] = useState(false);
+  const [unassignAlert, setUnassignAlert] = useState(null);
 
   // Fetch projects list when user logs in
   useEffect(() => {
@@ -23,6 +26,44 @@ export default function Home() {
       fetchProjects();
     }
   }, [token]);
+
+  // Listen for real-time project events to update projects list
+  useEffect(() => {
+    if (!socket || !connected) return;
+
+    const handleProjectInvited = (newProject) => {
+      setProjects((prev) => {
+        if (prev.some((p) => p._id === newProject._id)) return prev;
+        return [newProject, ...prev];
+      });
+    };
+
+    const handleProjectUpdated = (updatedProject) => {
+      setProjects((prev) =>
+        prev.map((p) => (p._id === updatedProject._id ? updatedProject : p))
+      );
+    };
+
+    const handleProjectDeleted = (deletedProjectId) => {
+      setProjects((prev) => prev.filter((p) => p._id !== deletedProjectId));
+    };
+
+    const handleTaskUnassigned = (data) => {
+      setUnassignAlert(data);
+    };
+
+    socket.on('project_invited', handleProjectInvited);
+    socket.on('project_updated', handleProjectUpdated);
+    socket.on('project_deleted', handleProjectDeleted);
+    socket.on('task_unassigned_notification', handleTaskUnassigned);
+
+    return () => {
+      socket.off('project_invited', handleProjectInvited);
+      socket.off('project_updated', handleProjectUpdated);
+      socket.off('project_deleted', handleProjectDeleted);
+      socket.off('task_unassigned_notification', handleTaskUnassigned);
+    };
+  }, [socket, connected]);
 
   const fetchProjects = async () => {
     setFetchingProjects(true);
@@ -202,6 +243,39 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {unassignAlert && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          background: 'rgba(30, 41, 59, 0.95)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(239, 68, 68, 0.4)',
+          borderRadius: '12px',
+          padding: '1.25rem',
+          color: '#f8fafc',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+          maxWidth: '350px',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem' }}>
+            <span style={{ fontWeight: 'bold', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              ⚠️ Task Unassigned
+            </span>
+            <button onClick={() => setUnassignAlert(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem', padding: '0 0.2rem' }}>&times;</button>
+          </div>
+          <p style={{ fontSize: '0.9rem', margin: 0, color: '#e2e8f0' }}>
+            You were unassigned from task <strong>{unassignAlert.taskTitle}</strong> in project <strong>{unassignAlert.projectName}</strong>.
+          </p>
+          <div style={{ fontSize: '0.85rem', color: '#f1f5f9', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '6px', borderLeft: '3px solid #ef4444', wordBreak: 'break-word' }}>
+            <strong>Reason:</strong> {unassignAlert.reason}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -749,8 +749,9 @@ button {
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
+  max-height: 90vh;
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  overflow-y: auto;
   animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -841,4 +842,200 @@ button {
 @keyframes scaleIn {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* Toast Notifications */
+.toast-notifications-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 9999;
+  max-width: 380px;
+  width: calc(100% - 4rem);
+}
+
+.toast-notification {
+  background: rgba(18, 24, 38, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: var(--shadow-lg), 0 4px 20px rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s ease;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateY(100%) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.toast-notification.info {
+  border-left: 4px solid var(--accent-primary);
+}
+
+.toast-notification.success {
+  border-left: 4px solid var(--accent-success);
+}
+
+.toast-notification.warning {
+  border-left: 4px solid var(--accent-warning);
+}
+
+.toast-notification.danger {
+  border-left: 4px solid var(--accent-danger);
+}
+
+.toast-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.toast-message {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.toast-action {
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.toast-action:hover {
+  background: var(--accent-secondary);
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem;
+}
+
+.toast-close:hover {
+  color: var(--text-primary);
+}
+
+/* Task Comments Section */
+.comments-section {
+  border-top: 1px solid var(--border-color);
+  padding: 1.5rem;
+}
+
+.comments-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding-right: 0.5rem;
+}
+
+.comment-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.comment-user {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.comment-date {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.comment-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.comment-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.comment-input {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.comment-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.comment-submit-btn {
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.comment-submit-btn:hover {
+  background: var(--accent-secondary);
+}
+
+.comment-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

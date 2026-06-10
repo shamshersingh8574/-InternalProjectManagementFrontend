@@ -2,8 +2,15 @@
 
 import React from 'react';
 
-export default function TaskCard({ task, onEdit }) {
+export default function TaskCard({ task, onEdit, isOwner, currentUser }) {
+  const isAssigned = task.assignees && task.assignees.some(u => (u._id || u) === currentUser?._id);
+  const isDraggable = isOwner || isAssigned;
+
   const handleDragStart = (e) => {
+    if (!isDraggable) {
+      e.preventDefault();
+      return;
+    }
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', task._id);
     // Add visual class while dragging if desired
@@ -25,7 +32,8 @@ export default function TaskCard({ task, onEdit }) {
   return (
     <div
       className="task-card"
-      draggable
+      draggable={isDraggable}
+      style={{ cursor: isDraggable ? 'grab' : 'pointer' }}
       onDragStart={handleDragStart}
       onClick={() => onEdit(task)}
     >
