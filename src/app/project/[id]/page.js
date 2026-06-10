@@ -429,7 +429,13 @@ export default function ProjectRoom() {
         }}
         onSave={handleTaskSave}
         onDelete={handleTaskDelete}
-        projectMembers={project.members || []}
+        projectMembers={
+          project 
+            ? [project.owner, ...(project.members || [])]
+                .filter(Boolean)
+                .filter((member, idx, self) => self.findIndex(m => m._id === member._id) === idx)
+            : []
+        }
         isOwner={isOwner}
         currentUser={user}
       />
