@@ -20,7 +20,7 @@ export default function AuthForm() {
     setLoading(true);
 
     if (isLogin) {
-      // Login validation
+      
       if (!email.trim() || !password.trim()) {
         setError('Please enter both email and password');
         setLoading(false);
@@ -41,7 +41,7 @@ export default function AuthForm() {
         sessionStorage.setItem('show_login_success', 'true');
       }
     } else {
-      // Registration validation
+      
       if (!username.trim() || !email.trim() || !password.trim()) {
         setError('Please fill in all fields');
         setLoading(false);
@@ -90,19 +90,7 @@ export default function AuthForm() {
 
         {error && <div className="auth-error">{error}</div>}
         {successMsg && (
-          <div 
-            className="auth-success" 
-            style={{ 
-              background: 'rgba(16, 185, 129, 0.15)', 
-              border: '1px solid var(--accent-success)', 
-              color: '#a7f3d0', 
-              padding: '0.8rem 1rem', 
-              borderRadius: '8px', 
-              fontSize: '0.85rem', 
-              marginBottom: '1.5rem', 
-              textAlign: 'center' 
-            }}
-          >
+          <div className="auth-success">
             {successMsg}
           </div>
         )}

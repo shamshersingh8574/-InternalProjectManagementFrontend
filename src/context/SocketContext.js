@@ -20,7 +20,6 @@ export const SocketProvider = ({ children }) => {
     const id = Date.now() + Math.random().toString(36).substring(2, 9);
     setNotifications((prev) => [...prev, { id, message, type, action }]);
     
-    // Auto-remove after 6 seconds
     setTimeout(() => {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     }, 6000);
@@ -39,12 +38,11 @@ export const SocketProvider = ({ children }) => {
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
     console.log(`Connecting socket to ${socketUrl}...`);
 
-    // Connect to Socket.IO server, passing token in auth handshake
     const newSocket = io(socketUrl, {
       auth: {
         token,
       },
-      transports: ['websocket'], // force WebSocket only
+      transports: ['websocket'], 
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
     });
@@ -64,7 +62,6 @@ export const SocketProvider = ({ children }) => {
       setConnected(false);
     });
 
-    // Real-time global notifications listeners
     newSocket.on('task_assigned', (data) => {
       console.log('Task assignment event received:', data);
       addNotification(
@@ -92,21 +89,18 @@ export const SocketProvider = ({ children }) => {
     };
   }, [token]);
 
-  // Join a project room
   const joinProject = (projectId) => {
     if (socket && connected) {
       socket.emit('join_project', projectId);
     }
   };
 
-  // Leave a project room
   const leaveProject = (projectId) => {
     if (socket && connected) {
       socket.emit('leave_project', projectId);
     }
   };
 
-  // Broadcast minor actions (dragging, typing, etc.)
   const broadcastAction = (projectId, action, details = {}) => {
     if (socket && connected) {
       socket.emit('user_action', { projectId, action, details });

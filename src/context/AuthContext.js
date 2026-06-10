@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Set API base URL
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {

@@ -21,14 +21,12 @@ export default function Home() {
   const [unassignAlert, setUnassignAlert] = useState(null);
   const [successToast, setSuccessToast] = useState('');
 
-  // Fetch projects list when user logs in
   useEffect(() => {
     if (token) {
       fetchProjects();
     }
   }, [token]);
 
-  // Handle success welcome toast after successful login
   useEffect(() => {
     if (user && sessionStorage.getItem('show_login_success') === 'true') {
       setSuccessToast(`Welcome back, ${user.username || 'User'}! You have logged in successfully.`);
@@ -41,7 +39,6 @@ export default function Home() {
     }
   }, [user]);
 
-  // Listen for real-time project events to update projects list
   useEffect(() => {
     if (!socket || !connected) return;
 
@@ -133,12 +130,11 @@ export default function Home() {
   if (loading) {
     return (
       <div className="auth-container">
-        <div style={{ color: 'var(--text-secondary)' }}>Loading your workspace...</div>
+        <div className="loading-text">Loading your workspace...</div>
       </div>
     );
   }
 
-  // Show Auth login screen if user is not authenticated
   if (!user) {
     return <AuthForm />;
   }
@@ -149,7 +145,7 @@ export default function Home() {
 
       <main className="dashboard-container">
         {dashboardError && (
-          <div className="auth-error" style={{ width: '100%', marginBottom: '1.5rem' }}>
+          <div className="dashboard-error">
             {dashboardError}
           </div>
         )}
@@ -164,8 +160,8 @@ export default function Home() {
         </div>
 
         {showCreateForm && (
-          <div className="auth-card" style={{ maxWidth: '100%', marginBottom: '2rem' }}>
-            <div className="auth-header" style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+          <div className="auth-card dashboard-create-card">
+            <div className="auth-header dashboard-create-header">
               <h2>Create New Project</h2>
               <p>Add details for your new collaborative project board</p>
             </div>
@@ -196,7 +192,7 @@ export default function Home() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <div className="form-actions">
                 <button
                   type="button"
                   className="btn-secondary"
@@ -216,18 +212,17 @@ export default function Home() {
         )}
 
         {fetchingProjects ? (
-          <div style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '2rem' }}>
+          <div className="projects-loading">
             Fetching projects...
           </div>
         ) : projects.length === 0 ? (
           <div
-            className="new-project-card"
-            style={{ width: '100%', height: '240px' }}
+            className="new-project-card first-project-card"
             onClick={() => setShowCreateForm(true)}
           >
             <span className="plus-icon">+</span>
             <h3>Create your first project</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            <p className="new-project-card-desc">
               Click here to get started with real-time task management.
             </p>
           </div>
@@ -259,61 +254,28 @@ export default function Home() {
       </main>
 
       {unassignAlert && (
-        <div style={{
-          position: 'fixed',
-          bottom: '2rem',
-          right: '2rem',
-          background: 'rgba(30, 41, 59, 0.95)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(239, 68, 68, 0.4)',
-          borderRadius: '12px',
-          padding: '1.25rem',
-          color: '#f8fafc',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-          maxWidth: '350px',
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem' }}>
-            <span style={{ fontWeight: 'bold', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div className="toast-unassigned">
+          <div className="toast-header">
+            <span className="toast-title-danger">
               ⚠️ Task Unassigned
             </span>
-            <button onClick={() => setUnassignAlert(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem', padding: '0 0.2rem' }}>&times;</button>
+            <button onClick={() => setUnassignAlert(null)} className="toast-close-btn">&times;</button>
           </div>
-          <p style={{ fontSize: '0.9rem', margin: 0, color: '#e2e8f0' }}>
+          <p className="toast-body">
             You were unassigned from task <strong>{unassignAlert.taskTitle}</strong> in project <strong>{unassignAlert.projectName}</strong>.
           </p>
-          <div style={{ fontSize: '0.85rem', color: '#f1f5f9', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '6px', borderLeft: '3px solid #ef4444', wordBreak: 'break-word' }}>
+          <div className="toast-reason">
             <strong>Reason:</strong> {unassignAlert.reason}
           </div>
         </div>
       )}
 
       {successToast && (
-        <div style={{
-          position: 'fixed',
-          bottom: '2rem',
-          right: '2rem',
-          background: 'rgba(16, 185, 129, 0.95)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(52, 211, 153, 0.4)',
-          borderRadius: '12px',
-          padding: '1.25rem',
-          color: '#f8fafc',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-          maxWidth: '350px',
-          zIndex: 1000,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <span style={{ fontSize: '0.95rem', margin: 0, fontWeight: '500', color: '#f8fafc' }}>
+        <div className="toast-success">
+          <span className="toast-success-text">
             🎉 {successToast}
           </span>
-          <button onClick={() => setSuccessToast('')} style={{ background: 'none', border: 'none', color: '#a7f3d0', cursor: 'pointer', fontSize: '1.2rem', padding: '0 0.2rem' }}>&times;</button>
+          <button onClick={() => setSuccessToast('')} className="toast-close-btn-green">&times;</button>
         </div>
       )}
     </div>

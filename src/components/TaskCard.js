@@ -13,7 +13,7 @@ export default function TaskCard({ task, onEdit, isOwner, currentUser }) {
     }
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', task._id);
-    // Add visual class while dragging if desired
+    
   };
 
   const getPriorityClass = (priority) => {
@@ -31,9 +31,8 @@ export default function TaskCard({ task, onEdit, isOwner, currentUser }) {
 
   return (
     <div
-      className="task-card"
+      className={`task-card ${isDraggable ? 'draggable-card' : 'clickable-card'}`}
       draggable={isDraggable}
-      style={{ cursor: isDraggable ? 'grab' : 'pointer' }}
       onDragStart={handleDragStart}
       onClick={() => onEdit(task)}
     >

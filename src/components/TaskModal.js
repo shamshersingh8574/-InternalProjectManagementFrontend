@@ -22,7 +22,6 @@ export default function TaskModal({
   const [priority, setPriority] = useState('medium');
   const [assignees, setAssignees] = useState([]);
 
-  // Comment State
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState('');
@@ -184,7 +183,7 @@ export default function TaskModal({
             <div className="member-checkbox-list">
               {projectMembers.length > 0 ? (
                 projectMembers.map((member) => (
-                  <label key={member._id} className="member-checkbox-label" style={{ opacity: !canEditFields ? 0.75 : 1 }}>
+                  <label key={member._id} className={`member-checkbox-label ${!canEditFields ? 'member-checkbox-label-disabled' : ''}`}>
                     <input
                       type="checkbox"
                       checked={assignees.includes(member._id)}
@@ -231,8 +230,8 @@ export default function TaskModal({
           <div className="comments-section">
             <h4 className="comments-title">Comments ({comments.length})</h4>
             
-            {commentError && (
-              <div style={{ color: '#fca5a5', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+             {commentError && (
+              <div className="task-comments-error">
                 {commentError}
               </div>
             )}
@@ -253,7 +252,7 @@ export default function TaskModal({
                   </div>
                 ))
               ) : (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic', margin: '0.5rem 0' }}>
+                <p className="task-comments-empty">
                   No comments yet. Be the first to comment!
                 </p>
               )}

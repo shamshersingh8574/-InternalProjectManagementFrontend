@@ -26,7 +26,6 @@ export default function ProjectRoom() {
   const [editProjectName, setEditProjectName] = useState('');
   const [editProjectDesc, setEditProjectDesc] = useState('');
   
-  // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [modalStatus, setModalStatus] = useState('todo');
@@ -43,17 +42,14 @@ export default function ProjectRoom() {
     fetchProjectTasks();
   }, [projectId, token]);
 
-  // Handle Socket events connection and lifecycle
   useEffect(() => {
     if (!socket || !connected || !projectId) return;
 
-    // Join the workspace room
     joinProject(projectId);
 
-    // Listeners for real-time task operations
     socket.on('task_created', (newTask) => {
       setTasks((prev) => {
-        // Prevent duplicate appending
+        
         if (prev.some((t) => t._id === newTask._id)) return prev;
         return [...prev, newTask];
       });
@@ -69,7 +65,6 @@ export default function ProjectRoom() {
       setTasks((prev) => prev.filter((task) => task._id !== deletedTaskId));
     });
 
-    // Listen for project structure updates (e.g. member added)
     socket.on('project_updated', (updatedProject) => {
       setProject(updatedProject);
     });
@@ -84,7 +79,6 @@ export default function ProjectRoom() {
       setUnassignAlert(data);
     });
 
-    // Clean up connections on component unmount
     return () => {
       leaveProject(projectId);
       socket.off('task_created');
@@ -167,7 +161,7 @@ export default function ProjectRoom() {
   };
 
   const handleTaskMove = async (taskId, newStatus) => {
-    // Optimistic UI updates
+    
     const originalTasks = [...tasks];
     setTasks((prev) =>
       prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t))
@@ -183,7 +177,7 @@ export default function ProjectRoom() {
     } catch (err) {
       console.error('Failed to update task status:', err.message);
       setBoardError(err.response?.data?.message || 'Failed to update task status.');
-      // Revert state if backend request fails
+      
       setTasks(originalTasks);
     }
   };
@@ -192,7 +186,7 @@ export default function ProjectRoom() {
     setBoardError('');
     try {
       if (taskData._id) {
-        // Edit Task
+        
         await axios.put(
           `${API_URL}/tasks/${taskData._id}`,
           {
@@ -206,7 +200,7 @@ export default function ProjectRoom() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
-        // Create Task
+        
         await axios.post(
           `${API_URL}/tasks`,
           {
@@ -259,7 +253,7 @@ export default function ProjectRoom() {
       if (res.data.success) {
         setInviteSuccess('Member added successfully!');
         setInviteEmail('');
-        // Refresh project member avatars
+        
         setProject(res.data.project);
       }
     } catch (err) {
@@ -270,7 +264,7 @@ export default function ProjectRoom() {
   if (loading) {
     return (
       <div className="auth-container">
-        <div style={{ color: 'var(--text-secondary)' }}>Loading Workspace board...</div>
+        <div className="loading-text">Loading Workspace board...</div>
       </div>
     );
   }
@@ -282,29 +276,11 @@ export default function ProjectRoom() {
       <Navbar projectName={project.name} />
 
       {boardError && (
-        <div 
-          className="auth-error" 
-          style={{ 
-            borderRadius: '0', 
-            margin: '0', 
-            width: '100%', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            padding: '0.75rem 2rem'
-          }}
-        >
+        <div className="board-banner-error">
           <span>⚠️ {boardError}</span>
           <button 
             onClick={() => setBoardError('')} 
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'inherit', 
-              fontSize: '1.2rem', 
-              cursor: 'pointer',
-              lineHeight: '1'
-            }}
+            className="board-banner-error-btn"
           >
             &times;
           </button>
@@ -314,41 +290,41 @@ export default function ProjectRoom() {
       <div className="board-subheader">
         <div className="board-info">
           {isEditingProject ? (
-            <form onSubmit={handleProjectUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '300px' }}>
+            <form onSubmit={handleProjectUpdate} className="project-edit-form">
               <input
                 type="text"
                 value={editProjectName}
                 onChange={(e) => setEditProjectName(e.target.value)}
-                style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(15,23,42,0.6)', color: 'var(--text-primary)' }}
+                className="project-edit-input"
                 required
               />
               <input
                 type="text"
                 value={editProjectDesc}
                 onChange={(e) => setEditProjectDesc(e.target.value)}
-                style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'rgba(15,23,42,0.6)', color: 'var(--text-primary)' }}
+                className="project-edit-input"
                 placeholder="Description"
               />
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="submit" className="btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}>Save</button>
-                <button type="button" className="btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setIsEditingProject(false)}>Cancel</button>
+              <div className="project-edit-buttons">
+                <button type="submit" className="btn-primary project-edit-btn">Save</button>
+                <button type="button" className="btn-secondary project-edit-btn" onClick={() => setIsEditingProject(false)}>Cancel</button>
               </div>
             </form>
           ) : (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div className="project-header-actions">
                 <h2>{project.name}</h2>
                 {isOwner && (
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="project-header-buttons">
                     <button 
                       onClick={() => setIsEditingProject(true)} 
-                      style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '0.85rem', cursor: 'pointer' }}
+                      className="btn-icon-edit"
                     >
                       ✏️ Edit
                     </button>
                     <button 
                       onClick={handleProjectDelete} 
-                      style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', fontSize: '0.85rem', cursor: 'pointer' }}
+                      className="btn-icon-delete"
                     >
                       🗑️ Delete Project
                     </button>
@@ -370,7 +346,7 @@ export default function ProjectRoom() {
                 onChange={(e) => setInviteEmail(e.target.value)}
                 required
               />
-              <button type="submit" className="btn-secondary" style={{ padding: '0.5rem 1rem' }}>
+              <button type="submit" className="btn-secondary btn-invite-submit">
                 Add Member
               </button>
             </form>
@@ -392,13 +368,13 @@ export default function ProjectRoom() {
       </div>
 
       {inviteError && (
-        <div style={{ background: 'rgba(239,68,68,0.1)', color: '#fca5a5', padding: '0.5rem 2rem', fontSize: '0.85rem', borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
+        <div className="project-banner-error">
           {inviteError}
         </div>
       )}
 
       {inviteSuccess && (
-        <div style={{ background: 'rgba(16,185,129,0.1)', color: '#a7f3d0', padding: '0.5rem 2rem', fontSize: '0.85rem', borderBottom: '1px solid rgba(16,185,129,0.2)' }}>
+        <div className="project-banner-success">
           {inviteSuccess}
         </div>
       )}
@@ -441,33 +417,17 @@ export default function ProjectRoom() {
       />
 
       {unassignAlert && (
-        <div style={{
-          position: 'fixed',
-          bottom: '2rem',
-          right: '2rem',
-          background: 'rgba(30, 41, 59, 0.95)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(239, 68, 68, 0.4)',
-          borderRadius: '12px',
-          padding: '1.25rem',
-          color: '#f8fafc',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-          maxWidth: '350px',
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem' }}>
-            <span style={{ fontWeight: 'bold', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div className="toast-unassigned">
+          <div className="toast-header">
+            <span className="toast-title-danger">
               ⚠️ Task Unassigned
             </span>
-            <button onClick={() => setUnassignAlert(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem', padding: '0 0.2rem' }}>&times;</button>
+            <button onClick={() => setUnassignAlert(null)} className="toast-close-btn">&times;</button>
           </div>
-          <p style={{ fontSize: '0.9rem', margin: 0, color: '#e2e8f0' }}>
+          <p className="toast-body">
             You were unassigned from task <strong>{unassignAlert.taskTitle}</strong> in project <strong>{unassignAlert.projectName}</strong>.
           </p>
-          <div style={{ fontSize: '0.85rem', color: '#f1f5f9', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '6px', borderLeft: '3px solid #ef4444', wordBreak: 'break-word' }}>
+          <div className="toast-reason">
             <strong>Reason:</strong> {unassignAlert.reason}
           </div>
         </div>
