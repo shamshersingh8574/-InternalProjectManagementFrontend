@@ -23,7 +23,7 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://internalprojectmanagementsystem.onrender.com';
     console.log(`Connecting socket to ${socketUrl}...`);
 
     // Connect to Socket.IO server, passing token in auth handshake
