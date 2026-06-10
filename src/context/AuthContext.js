@@ -46,7 +46,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    setLoading(true);
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
       if (response.data.success) {
@@ -62,13 +61,10 @@ export const AuthProvider = ({ children }) => {
         success: false,
         message: error.response?.data?.message || 'Invalid email or password',
       };
-    } finally {
-      setLoading(false);
     }
   };
 
   const register = async (username, email, password) => {
-    setLoading(true);
     try {
       const response = await axios.post(`${API_URL}/auth/register`, {
         username,
@@ -84,8 +80,6 @@ export const AuthProvider = ({ children }) => {
         success: false,
         message: error.response?.data?.message || 'Registration failed. Try again.',
       };
-    } finally {
-      setLoading(false);
     }
   };
 

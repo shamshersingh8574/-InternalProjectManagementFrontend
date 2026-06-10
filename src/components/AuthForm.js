@@ -37,6 +37,8 @@ export default function AuthForm() {
       const res = await login(email.trim(), password);
       if (!res.success) {
         setError(res.message);
+      } else {
+        sessionStorage.setItem('show_login_success', 'true');
       }
     } else {
       // Registration validation

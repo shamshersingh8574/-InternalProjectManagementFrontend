@@ -19,6 +19,7 @@ export default function Home() {
   const [dashboardError, setDashboardError] = useState('');
   const [fetchingProjects, setFetchingProjects] = useState(false);
   const [unassignAlert, setUnassignAlert] = useState(null);
+  const [successToast, setSuccessToast] = useState('');
 
   // Fetch projects list when user logs in
   useEffect(() => {
@@ -26,6 +27,19 @@ export default function Home() {
       fetchProjects();
     }
   }, [token]);
+
+  // Handle success welcome toast after successful login
+  useEffect(() => {
+    if (user && sessionStorage.getItem('show_login_success') === 'true') {
+      setSuccessToast(`Welcome back, ${user.username || 'User'}! You have logged in successfully.`);
+      sessionStorage.removeItem('show_login_success');
+      
+      const timer = setTimeout(() => {
+        setSuccessToast('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   // Listen for real-time project events to update projects list
   useEffect(() => {
@@ -274,6 +288,32 @@ export default function Home() {
           <div style={{ fontSize: '0.85rem', color: '#f1f5f9', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '6px', borderLeft: '3px solid #ef4444', wordBreak: 'break-word' }}>
             <strong>Reason:</strong> {unassignAlert.reason}
           </div>
+        </div>
+      )}
+
+      {successToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          background: 'rgba(16, 185, 129, 0.95)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(52, 211, 153, 0.4)',
+          borderRadius: '12px',
+          padding: '1.25rem',
+          color: '#f8fafc',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+          maxWidth: '350px',
+          zIndex: 1000,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <span style={{ fontSize: '0.95rem', margin: 0, fontWeight: '500', color: '#f8fafc' }}>
+            🎉 {successToast}
+          </span>
+          <button onClick={() => setSuccessToast('')} style={{ background: 'none', border: 'none', color: '#a7f3d0', cursor: 'pointer', fontSize: '1.2rem', padding: '0 0.2rem' }}>&times;</button>
         </div>
       )}
     </div>
